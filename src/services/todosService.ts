@@ -1,4 +1,4 @@
-import { Todo } from '../types/Todo.ts'
+import { TodoList } from '../types/TodoList.ts'
 import { db } from '../utils/firebaseConfig.ts'
 import {
 	collection,
@@ -9,18 +9,18 @@ import {
 	deleteDoc,
 } from 'firebase/firestore'
 
-export const getTodoLists = async (): Promise<Todo[]> => {
+export const getTodoLists = async (): Promise<TodoList[]> => {
 	const querySnapshot = await getDocs(collection(db, 'todoLists'))
 	return querySnapshot.docs.map(doc => ({
 		id: doc.id,
 		...doc.data(),
-	})) as Todo[]
+	})) as TodoList[]
 }
 
 export const createTodoList = async (
 	title: string,
 	userId: string
-): Promise<Todo> => {
+): Promise<TodoList> => {
 	const docRef = await addDoc(collection(db, 'todoLists'), { title, userId })
 	return { id: docRef.id, title, userId }
 }

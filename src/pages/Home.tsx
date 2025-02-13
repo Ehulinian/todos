@@ -1,17 +1,20 @@
 import { useEffect, useState } from 'react'
-
-import { Todo } from '../types/Todo.ts'
 import { useAuth } from '../utils/authHelpers.ts'
 import {
 	createTodoList,
 	deleteTodoList,
 	getTodoLists,
+	updateTodoList,
 } from '../services/todosService.ts'
+import { TodoList } from '../types/TodoList.ts'
+import { Link } from 'react-router-dom'
 
 export const Home = () => {
 	const { user, logout } = useAuth()
-	const [todoLists, setTodoLists] = useState<Todo[]>([])
+	const [todoLists, setTodoLists] = useState<TodoList[]>([])
 	const [newListTitle, setNewListTitle] = useState('')
+	const [editListTitle, setEditListTitle] = useState<string | null>(null)
+	const [editListId, setEditListId] = useState<string | null>(null)
 
 	useEffect(() => {
 		const fetchLists = async () => {
@@ -32,6 +35,20 @@ export const Home = () => {
 	const handleDeleteList = async (id: string) => {
 		await deleteTodoList(id)
 		setTodoLists(todoLists.filter(list => list.id !== id))
+	}
+
+	const handleEditList = (id: string, title: string) => {
+		setEditListId(id)
+		setEditListTitle(title)
+	}
+
+	const handleSaveEdit = async () => {
+		if (!editListTitle || !editListId) return
+		await updateTodoList(editListId, editListTitle)
+		const updatedLists = await getTodoLists()
+		setTodoLists(updatedLists)
+		setEditListId(null)
+		setEditListTitle('')
 	}
 
 	return (
@@ -58,13 +75,49 @@ export const Home = () => {
 			<ul className='mt-5 w-1/2'>
 				{todoLists.map(list => (
 					<li key={list.id} className='flex justify-between p-2 border-b'>
-						<span>{list.title}</span>
-						<button
-							onClick={() => handleDeleteList(list.id)}
-							className='text-red-500'
-						>
-							×
-						</button>
+						{editListId === list.id ? (
+							<div className='flex gap-2'>
+								<input
+									type='text'
+									value={editListTitle || ''}
+									onChange={e => setEditListTitle(e.target.value)}
+									className='p-2 border rounded'
+								/>
+								<button
+									onClick={handleSaveEdit}
+									className='bg-blue-500 text-white p-2 rounded'
+								>
+									Зберегти
+								</button>
+								<button
+									onClick={() => {
+										setEditListId(null)
+										setEditListTitle('')
+									}}
+									className='bg-gray-500 text-white p-2 rounded'
+								>
+									Скасувати
+								</button>
+							</div>
+						) : (
+							<>
+								<Link to={`/list/${list.id}`}>
+									<span>{list.title}</span>
+								</Link>
+								<button
+									onClick={() => handleEditList(list.id, list.title)}
+									className='text-blue-500'
+								>
+									Редагувати
+								</button>
+								<button
+									onClick={() => handleDeleteList(list.id)}
+									className='text-red-500'
+								>
+									×
+								</button>
+							</>
+						)}
 					</li>
 				))}
 			</ul>

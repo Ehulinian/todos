@@ -1,75 +1,80 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import {
-	collection,
-	addDoc,
-	deleteDoc,
-	doc,
-	onSnapshot,
-	updateDoc,
-} from 'firebase/firestore'
-import { db } from '../utils/firebaseConfig.ts'
-import { Todo } from '../types/Todo.ts'
 import { useAuth } from '../utils/authHelpers.ts'
+import { Todo } from '../types/Todo.ts'
+import {
+	createTask,
+	deleteTask,
+	getTasks,
+	toggleTaskCompletion,
+	updateTask,
+} from '../services/todoService.ts'
 
 export const Tasks = () => {
 	const { listId } = useParams<{ listId: string }>()
 	const navigate = useNavigate()
 	const { user } = useAuth()
 	const [tasks, setTasks] = useState<Todo[]>([])
-	const [newTask, setNewTask] = useState<{ name: string; description: string }>(
-		{
-			name: '',
-			description: '',
-		}
-	)
+	const [newTask, setNewTask] = useState<{
+		title: string
+		description: string
+	}>({
+		title: '',
+		description: '',
+	})
 	const [editingTask, setEditingTask] = useState<{
 		id: string
-		name: string
+		title: string
 		description: string
 	} | null>(null)
 
 	useEffect(() => {
 		if (!listId || !user) return
 
-		const tasksRef = collection(db, `users/${user.uid}/lists/${listId}/tasks`)
-		const unsubscribe = onSnapshot(tasksRef, snapshot => {
-			const tasksData = snapshot.docs.map(doc => ({
-				id: doc.id,
-				...doc.data(),
-			})) as Todo[]
+		const fetchTasks = async () => {
+			const tasksData = await getTasks(listId)
 			setTasks(tasksData)
-		})
+		}
 
-		return () => unsubscribe()
+		fetchTasks()
 	}, [listId, user])
 
 	const handleAddTask = async () => {
-		if (!newTask.name.trim() || !user || !listId) return
+		if (!newTask.title.trim() || !user || !listId) return
 
-		await addDoc(collection(db, `users/${user.uid}/lists/${listId}/tasks`), {
-			name: newTask.name,
-			description: newTask.description,
-			completed: false,
-		})
-		setNewTask({ name: '', description: '' })
+		const newTaskData = await createTask(
+			listId,
+			newTask.title,
+			newTask.description
+		)
+		setTasks(prevTasks => [...prevTasks, newTaskData])
+		setNewTask({ title: '', description: '' })
 	}
 
 	const handleDeleteTask = async (id: string) => {
 		if (!user || !listId) return
 
-		await deleteDoc(doc(db, `users/${user.uid}/lists/${listId}/tasks`, id))
+		await deleteTask(listId, id)
+		setTasks(prevTasks => prevTasks.filter(task => task.id !== id))
 	}
 
 	const handleEditTask = async () => {
-		if (!editingTask || !editingTask.name.trim() || !user || !listId) return
+		if (!editingTask || !editingTask.title.trim() || !user || !listId) return
 
-		await updateDoc(
-			doc(db, `users/${user.uid}/lists/${listId}/tasks`, editingTask.id),
-			{
-				name: editingTask.name,
-				description: editingTask.description,
-			}
+		await updateTask(listId, editingTask.id, {
+			title: editingTask.title,
+			description: editingTask.description,
+		})
+		setTasks(prevTasks =>
+			prevTasks.map(task =>
+				task.id === editingTask.id
+					? {
+							...task,
+							title: editingTask.title,
+							description: editingTask.description,
+					  }
+					: task
+			)
 		)
 		setEditingTask(null)
 	}
@@ -77,9 +82,12 @@ export const Tasks = () => {
 	const handleToggleComplete = async (id: string, completed: boolean) => {
 		if (!user || !listId) return
 
-		await updateDoc(doc(db, `users/${user.uid}/lists/${listId}/tasks`, id), {
-			completed: !completed,
-		})
+		await toggleTaskCompletion(listId, id, completed)
+		setTasks(prevTasks =>
+			prevTasks.map(task =>
+				task.id === id ? { ...task, completed: !completed } : task
+			)
+		)
 	}
 
 	return (
@@ -94,8 +102,8 @@ export const Tasks = () => {
 					type='text'
 					placeholder='Назва завдання'
 					className='p-2 border rounded flex-1'
-					value={newTask.name}
-					onChange={e => setNewTask({ ...newTask, name: e.target.value })}
+					value={newTask.title}
+					onChange={e => setNewTask({ ...newTask, title: e.target.value })}
 				/>
 				<input
 					type='text'
@@ -131,9 +139,9 @@ export const Tasks = () => {
 								<>
 									<input
 										type='text'
-										value={editingTask.name}
+										value={editingTask.title}
 										onChange={e =>
-											setEditingTask({ ...editingTask, name: e.target.value })
+											setEditingTask({ ...editingTask, title: e.target.value })
 										}
 										className='p-2 border rounded flex-1'
 									/>
@@ -151,7 +159,7 @@ export const Tasks = () => {
 								</>
 							) : (
 								<span className={task.completed ? 'line-through' : ''}>
-									{task.name}
+									{task.title}
 								</span>
 							)}
 						</div>

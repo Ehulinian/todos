@@ -15,7 +15,7 @@ export const Register = () => {
 
 		try {
 			await createUserWithEmailAndPassword(auth, email, password)
-			navigate('/')
+			navigate('/login')
 		} catch (err) {
 			setError('Something went wrong')
 			throw err

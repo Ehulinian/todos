@@ -1,6 +1,5 @@
-export type User = {
-	uid: string
-	email?: string
-	displayName?: string
-	role: 'admin' | 'viewer'
+import { User as FirebaseUser } from 'firebase/auth'
+
+export interface User extends FirebaseUser {
+	role?: 'admin' | 'viewer'
 }

@@ -1,6 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { AuthContext } from './AuthContext'
 import { User } from '../types/User'
+import { onAuthStateChanged } from 'firebase/auth'
+import { auth } from '../utils/firebaseConfig'
 
 type Props = {
 	children: React.ReactNode
@@ -9,6 +11,17 @@ type Props = {
 export const AuthProvider: React.FC<Props> = ({ children }) => {
 	const [user, setUser] = useState<User | null>(null)
 	const [role, setRole] = useState<'admin' | 'viewer' | undefined>(undefined)
+
+	useEffect(() => {
+		const unsubscribe = onAuthStateChanged(auth, firebaseUser => {
+			if (firebaseUser) {
+				setUser({ ...firebaseUser, role: 'viewer' })
+			} else {
+				setUser(null)
+			}
+		})
+		return () => unsubscribe()
+	}, [])
 
 	const login = (user: User) => {
 		setUser(user)
