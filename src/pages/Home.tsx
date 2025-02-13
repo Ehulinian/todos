@@ -19,8 +19,8 @@ export const Home = () => {
 
 	useEffect(() => {
 		const fetchLists = async () => {
-			if (user) {
-				const lists = await getTodoLists(user!.uid)
+			if (user?.id) {
+				const lists = await getTodoLists(user.id)
 				setTodoLists(lists)
 			}
 		}
@@ -28,15 +28,16 @@ export const Home = () => {
 	}, [user])
 
 	const handleCreateList = async (newListTitle: string) => {
-		if (!user) return
-		await createTodoList(newListTitle, user!.uid)
-		const updatedLists = await getTodoLists(user!.uid)
+		if (!user?.id) return
+		await createTodoList(newListTitle, user.id)
+		const updatedLists = await getTodoLists(user.id)
 		setTodoLists(updatedLists)
 	}
 
 	const handleDeleteList = async (id: string) => {
-		await deleteTodoList(id)
-		const updatedLists = await getTodoLists(user!.uid)
+		if (!user?.id) return
+		await deleteTodoList(user.id, id)
+		const updatedLists = await getTodoLists(user.id)
 		setTodoLists(updatedLists)
 	}
 
@@ -46,9 +47,9 @@ export const Home = () => {
 	}
 
 	const handleSaveEdit = async () => {
-		if (!editListTitle || !editListId) return
-		await updateTodoList(editListId, editListTitle)
-		const updatedLists = await getTodoLists(user!.uid)
+		if (!editListTitle || !editListId || !user?.id) return
+		await updateTodoList(user.id, editListId, editListTitle)
+		const updatedLists = await getTodoLists(user.id)
 		setTodoLists(updatedLists)
 		setEditListId(null)
 		setEditListTitle('')

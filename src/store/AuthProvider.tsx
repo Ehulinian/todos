@@ -15,7 +15,11 @@ export const AuthProvider: React.FC<Props> = ({ children }) => {
 	useEffect(() => {
 		const unsubscribe = onAuthStateChanged(auth, firebaseUser => {
 			if (firebaseUser) {
-				setUser({ ...firebaseUser, role: 'viewer' })
+				setUser({
+					id: firebaseUser.uid,
+					email: firebaseUser.email!,
+					role: 'viewer',
+				})
 			} else {
 				setUser(null)
 			}

@@ -17,6 +17,8 @@ type Props = {
 	) => void
 	handleEditTask: () => void
 	handleDeleteTask: (id: string) => void
+	canEdit: boolean
+	canDelete: boolean
 }
 
 export const TaskItem: React.FC<Props> = ({
@@ -26,6 +28,8 @@ export const TaskItem: React.FC<Props> = ({
 	setEditingTask,
 	handleEditTask,
 	handleDeleteTask,
+	canEdit,
+	canDelete,
 }) => {
 	return (
 		<li className='flex justify-between items-center bg-gray-100 p-2 rounded'>
@@ -73,19 +77,23 @@ export const TaskItem: React.FC<Props> = ({
 						Зберегти
 					</button>
 				) : (
+					canEdit && (
+						<button
+							onClick={() => setEditingTask(task)}
+							className='bg-yellow-500 text-white p-2 rounded'
+						>
+							Редагувати
+						</button>
+					)
+				)}
+				{canDelete && (
 					<button
-						onClick={() => setEditingTask(task)}
-						className='bg-yellow-500 text-white p-2 rounded'
+						onClick={() => handleDeleteTask(task.id)}
+						className='bg-red-500 text-white p-2 rounded'
 					>
-						Редагувати
+						Видалити
 					</button>
 				)}
-				<button
-					onClick={() => handleDeleteTask(task.id)}
-					className='bg-red-500 text-white p-2 rounded'
-				>
-					Видалити
-				</button>
 			</div>
 		</li>
 	)
