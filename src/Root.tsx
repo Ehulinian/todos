@@ -3,8 +3,8 @@ import { Register } from './pages/Register.tsx'
 import { ProtectedRoute } from './components/ProtectedRoute.tsx'
 import { Home } from './pages/Home.tsx'
 import { Login } from './pages/Login.tsx'
-import { Tasks } from './components/TaskList.tsx'
 import { AuthProvider } from './store/AuthProvider.tsx'
+import { Tasks } from './components/Tasks.tsx'
 
 export const Root = () => (
 	<Router>

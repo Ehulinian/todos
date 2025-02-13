@@ -7,10 +7,13 @@ import {
 	doc,
 	updateDoc,
 	deleteDoc,
+	query,
+	where,
 } from 'firebase/firestore'
 
-export const getTodoLists = async (): Promise<TodoList[]> => {
-	const querySnapshot = await getDocs(collection(db, 'todoLists'))
+export const getTodoLists = async (userId: string): Promise<TodoList[]> => {
+	const q = query(collection(db, 'todoLists'), where('userId', '==', userId))
+	const querySnapshot = await getDocs(q)
 	return querySnapshot.docs.map(doc => ({
 		id: doc.id,
 		...doc.data(),

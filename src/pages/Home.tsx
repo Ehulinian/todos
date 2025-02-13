@@ -7,34 +7,37 @@ import {
 	updateTodoList,
 } from '../services/todosService.ts'
 import { TodoList } from '../types/TodoList.ts'
-import { Link } from 'react-router-dom'
+import { CreateListForm } from '../components/CreateListForm.tsx'
+import { TodoLists } from '../components/TodoLists.tsx'
+import { LogoutButton } from '../components/UI/LogoutButton.tsx'
 
 export const Home = () => {
-	const { user, logout } = useAuth()
+	const { user } = useAuth()
 	const [todoLists, setTodoLists] = useState<TodoList[]>([])
-	const [newListTitle, setNewListTitle] = useState('')
 	const [editListTitle, setEditListTitle] = useState<string | null>(null)
 	const [editListId, setEditListId] = useState<string | null>(null)
 
 	useEffect(() => {
 		const fetchLists = async () => {
-			const lists = await getTodoLists()
-			setTodoLists(lists)
+			if (user) {
+				const lists = await getTodoLists(user!.uid)
+				setTodoLists(lists)
+			}
 		}
 		fetchLists()
-	}, [])
+	}, [user])
 
-	const handleCreateList = async () => {
-		if (!newListTitle) return
+	const handleCreateList = async (newListTitle: string) => {
+		if (!user) return
 		await createTodoList(newListTitle, user!.uid)
-		setNewListTitle('')
-		const updatedLists = await getTodoLists()
+		const updatedLists = await getTodoLists(user!.uid)
 		setTodoLists(updatedLists)
 	}
 
 	const handleDeleteList = async (id: string) => {
 		await deleteTodoList(id)
-		setTodoLists(todoLists.filter(list => list.id !== id))
+		const updatedLists = await getTodoLists(user!.uid)
+		setTodoLists(updatedLists)
 	}
 
 	const handleEditList = (id: string, title: string) => {
@@ -45,7 +48,7 @@ export const Home = () => {
 	const handleSaveEdit = async () => {
 		if (!editListTitle || !editListId) return
 		await updateTodoList(editListId, editListTitle)
-		const updatedLists = await getTodoLists()
+		const updatedLists = await getTodoLists(user!.uid)
 		setTodoLists(updatedLists)
 		setEditListId(null)
 		setEditListTitle('')
@@ -56,78 +59,20 @@ export const Home = () => {
 			<h1 className='text-2xl font-bold'>Головна</h1>
 			<p className='mt-2'>Ласкаво просимо, {user?.email}!</p>
 
-			<div className='mt-5 flex gap-2'>
-				<input
-					type='text'
-					placeholder='Назва списку'
-					className='p-2 border rounded'
-					value={newListTitle}
-					onChange={e => setNewListTitle(e.target.value)}
-				/>
-				<button
-					onClick={handleCreateList}
-					className='bg-green-500 text-white p-2 rounded'
-				>
-					Додати список
-				</button>
-			</div>
+			<CreateListForm onCreate={handleCreateList} />
 
-			<ul className='mt-5 w-1/2'>
-				{todoLists.map(list => (
-					<li key={list.id} className='flex justify-between p-2 border-b'>
-						{editListId === list.id ? (
-							<div className='flex gap-2'>
-								<input
-									type='text'
-									value={editListTitle || ''}
-									onChange={e => setEditListTitle(e.target.value)}
-									className='p-2 border rounded'
-								/>
-								<button
-									onClick={handleSaveEdit}
-									className='bg-blue-500 text-white p-2 rounded'
-								>
-									Зберегти
-								</button>
-								<button
-									onClick={() => {
-										setEditListId(null)
-										setEditListTitle('')
-									}}
-									className='bg-gray-500 text-white p-2 rounded'
-								>
-									Скасувати
-								</button>
-							</div>
-						) : (
-							<>
-								<Link to={`/list/${list.id}`}>
-									<span>{list.title}</span>
-								</Link>
-								<button
-									onClick={() => handleEditList(list.id, list.title)}
-									className='text-blue-500'
-								>
-									Редагувати
-								</button>
-								<button
-									onClick={() => handleDeleteList(list.id)}
-									className='text-red-500'
-								>
-									×
-								</button>
-							</>
-						)}
-					</li>
-				))}
-			</ul>
+			<TodoLists
+				todoLists={todoLists}
+				onEdit={handleEditList}
+				onDelete={handleDeleteList}
+				onSaveEdit={handleSaveEdit}
+				editListId={editListId}
+				editListTitle={editListTitle}
+				setEditListId={setEditListId}
+				setEditListTitle={setEditListTitle}
+			/>
 
-			<button
-				onClick={logout}
-				className='mt-5 bg-red-500 text-white p-2 rounded'
-			>
-				Вийти
-			</button>
+			<LogoutButton />
 		</div>
 	)
 }
